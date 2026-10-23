@@ -1,0 +1,15 @@
+# Maven 构建产物
+target/
+
+# IDEA 工程配置（个人仓库不提交）
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# 编译产物
+*.class
+
+# 日志与系统文件
+*.log
+.DS_Store
