@@ -1,4 +1,6 @@
-package com.study;
+package com.study.list;
+
+import com.study.Hello;
 
 public class MyArrayListDemo {
     public static void main(String[] args) {
