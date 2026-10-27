@@ -22,6 +22,11 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
         return null;
     }
 
+    @Override
+    public int size() {
+        return size;
+    }
+
     static class Node<K, V> implements Map.Entry<K, V> {
         final int hash;
         final K key;
@@ -78,5 +83,53 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
     static int indexFor(int h, int n) {
         return (n - 1) & h;
     }
+
+    public V get(Object key) {
+        int h = hash(key);
+        int i = indexFor(h, table.length);
+        Node<K, V> e = table[i];
+        while (e != null) {
+            if (h == e.hash && (key == e.getKey() || (key != null && key.equals(e.getKey())))) {
+                return e.getValue();
+            }
+            e = e.next;
+        }
+        return null;
+    }
+
+    public V put(K key, V value) {
+        int h = hash(key);
+        int index = indexFor(h, table.length);
+        Node<K, V> first = table[index];
+        Node<K, V> e;
+        if (first == null) {
+            e = new Node<>(h, key, value, null);
+            table[index] = e;
+            size++;
+            return null;
+        }
+        if (h == first.hash
+                && (first.getKey() == key || (key != null && key.equals(first.getKey())))) {
+            V oldValue = first.getValue();
+            first.setValue(value);
+            return oldValue;
+        }
+        while (true) {
+            if (first.next == null) {
+                e = new Node<>(h, key, value, null);
+                first.next = e;
+                size++;
+                return null;
+            }
+            first = first.next;
+            if (h == first.hash
+                    && (first.getKey() == key || (key != null && key.equals(first.getKey())))) {
+                V oldValue = first.getValue();
+                first.setValue(value);
+                return oldValue;
+            }
+        }
+    }
+
 
 }
