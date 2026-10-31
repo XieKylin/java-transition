@@ -203,4 +203,27 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
         table = newTable;
         threshold = newCap * 3 / 4;
     }
+
+    @Override
+    public V remove(Object k) {
+        int h = hash(k);
+        int index = indexFor(h, table.length);
+        Node<K, V> prev = null;
+        Node<K, V> e = table[index];
+        while (e != null) {
+            if (h == e.hash && (e.getKey() == k || (k != null && k.equals(e.getKey())))) {
+                if (prev == null) {
+                    table[index] = e.next;
+                } else {
+                    prev.next = e.next;
+                }
+                size--;
+                return e.getValue();
+            }
+            prev = e;
+            e = e.next;
+        }
+        return null;
+    }
+
 }

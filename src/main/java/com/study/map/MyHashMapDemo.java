@@ -13,6 +13,7 @@ public class MyHashMapDemo {
         perturbation();
         collisionAndOverwrite();
         resizeTrajectory();
+        removeCase();
     }
 
     /**
@@ -111,5 +112,65 @@ public class MyHashMapDemo {
                 && miss == 0;
         System.out.println("  不变式 [cap=64 && threshold=48 && size=30 && 丢失=0] -> "
                 + (ok ? "PASS" : "FAIL（先查 resizeBrute 末尾有没有同步 threshold）"));
+    }
+
+    /**
+     * 【5】remove：同桶四连的三种位置 + JDK 对照 + 只扩不缩
+     *
+     * 8/24/40/56 在 cap=16 时全落桶 8，链是 8->24->40->56，
+     * 正好能分别覆盖「删桶头(prev==null) / 删链中 / 删链尾」三条路径。
+     */
+    private static void removeCase() {
+        System.out.println();
+        System.out.println("【5】remove");
+        String[] labels = {"删桶头 8", "删链中 40", "删链尾 56"};
+        int[] targets = {8, 40, 56};
+        String[] expect = {"24->40->56->", "8->24->56->", "8->24->40->"};
+
+        for (int c = 0; c < targets.length; c++) {
+            MyHashMap<Integer, String> m = new MyHashMap<>();
+            for (int k : new int[]{8, 24, 40, 56}) {
+                m.put(k, "v" + k);
+            }
+            String old = m.remove(targets[c]);
+            String chain = dumpBucket(m, 8);
+            System.out.println("  " + labels[c] + ": 返回=" + old + " size=" + m.size()
+                    + "  链=" + chain + "  " + (chain.equals(expect[c]) ? "PASS" : "FAIL(期望 " + expect[c] + ")"));
+        }
+
+        // JDK 对照
+        MyHashMap<Integer, String> mine = new MyHashMap<>();
+        java.util.HashMap<Integer, String> jdk = new java.util.HashMap<>();
+        for (int i = 0; i < 30; i++) {
+            mine.put(1000 + i, "v" + i);
+            jdk.put(1000 + i, "v" + i);
+        }
+        for (int k = 1000; k < 1030; k += 3) {
+            mine.remove(k);
+            jdk.remove(k);
+        }
+        System.out.println("  equals(jdk)=" + mine.equals(jdk)
+                + "  size=" + mine.size() + "/" + jdk.size()
+                + "  get(删掉的 1000)=" + mine.get(1000)
+                + "  " + (mine.equals(jdk) && mine.get(1000) == null ? "PASS" : "FAIL"));
+
+        // 只扩不缩：删到只剩 1 个，cap 不该变
+        int capBefore = mine.table.length;
+        for (int i = 0; i < 30; i++) {
+            mine.remove(1000 + i);
+        }
+        System.out.println("  删空后: size=" + mine.size() + " cap=" + mine.table.length
+                + "（删前 " + capBefore + "）  "
+                + (mine.table.length == capBefore && mine.isEmpty() ? "PASS 只扩不缩" : "FAIL"));
+    }
+
+    private static String dumpBucket(MyHashMap<Integer, String> map, int i) {
+        StringBuilder sb = new StringBuilder();
+        MyHashMap.Node<Integer, String> e = map.table[i];
+        while (e != null) {
+            sb.append(e.key).append("->");
+            e = e.next;
+        }
+        return sb.toString();
     }
 }
