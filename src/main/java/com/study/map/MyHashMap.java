@@ -105,8 +105,11 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
         if (first == null) {
             e = new Node<>(h, key, value, null);
             table[index] = e;
-            size++;
+            if (++size > threshold) {
+                resizeBrute();
+            }
             return null;
+
         }
         if (h == first.hash
                 && (first.getKey() == key || (key != null && key.equals(first.getKey())))) {
@@ -118,7 +121,9 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
             if (first.next == null) {
                 e = new Node<>(h, key, value, null);
                 first.next = e;
-                size++;
+                if (++size > threshold) {
+                    resizeBrute();
+                }
                 return null;
             }
             first = first.next;
@@ -131,5 +136,41 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void resizeBrute() {
+        Node<K, V>[] oldTable = table;
+        int oldCap = oldTable.length;
+        int newCap = oldCap << 1;
 
+        // TODO 1：建新数组（照构造器第 16 行的写法，只换长度）
+        Node<K, V>[] newTable = new Node[newCap];
+
+        // TODO 2：外层遍历 oldTable 的 i = 0..oldCap-1，
+        //        内层沿桶内链表走，按 indexFor(e.hash, newCap) 挂到 newTable 上。
+        //        循环体第一行必须先保存 e.next。
+        for (Node<K, V> kvNode : oldTable) {
+            Node<K, V> e = kvNode;
+            while (e != null) {
+                Node<K, V> next = e.next;
+                int index = indexFor(e.hash, newCap);
+                Node<K, V> last;
+                if ((last = newTable[index]) == null) {
+                    newTable[index] = e;
+                    e.next = null;
+                    e = next;
+                    continue;
+                }
+                while (last.next != null) {
+                    last = last.next;
+                }
+                last.next = e;
+                e.next = null;
+                e = next;
+            }
+        }
+
+        // TODO 3：换表 + 同步阈值
+        table = newTable;
+        threshold = newCap * 3 / 4;
+    }
 }

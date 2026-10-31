@@ -1,16 +1,18 @@
 package com.study.map;
 
 /**
- * Day-05 验收用例
+ * MyHashMap 验收用例
  * 1. 扰动对照：证明 ^ (h >>> 16) 确实起作用
  * 2. 冲突链：三个同下标 key 都能取回（逼它走 equals，不走 ==）
  * 3. 覆盖写：表头节点 / 链中间节点，size 不增加
+ * 4. 扩容轨迹：13 个 -> 16/32，25 个 -> 32/64；30 key 全量校验 + 不变式断言
  */
 public class MyHashMapDemo {
 
     public static void main(String[] args) {
         perturbation();
         collisionAndOverwrite();
+        resizeTrajectory();
     }
 
     /**
@@ -67,5 +69,47 @@ public class MyHashMapDemo {
         System.out.println("  覆盖表头 2000: 返回旧值=" + oldHead
                 + "  get=" + one.get(Integer.valueOf(2000)));
         System.out.println("  size 应仍为 1 -> " + one.size());
+    }
+
+    /**
+     * 【4】扩容轨迹 + 30 key 全量校验
+     *
+     * 为什么 key 用 1000..1029 而不是 0..29：
+     * Integer 缓存只覆盖 -128~127，用 0..29 的话 put 和 get 拿到的是同一个缓存实例，
+     * get 里 `key == e.getKey()` 会短路命中，equals 那条路径永远测不到（Day-05 踩过）。
+     */
+    private static void resizeTrajectory() {
+        System.out.println("【4】扩容轨迹");
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        int lastCap = map.table.length;
+        StringBuilder trace = new StringBuilder(String.valueOf(lastCap));
+
+        for (int i = 0; i < 30; i++) {
+            map.put(1000 + i, "v" + i);
+            if (map.table.length != lastCap) {
+                trace.append(" --第").append(i + 1).append("个--> ").append(map.table.length);
+                lastCap = map.table.length;
+            }
+        }
+        System.out.println("  轨迹: " + trace);
+        System.out.println("  期望: 16 --第13个--> 32 --第25个--> 64");
+        System.out.println("  终态: cap=" + map.table.length + " size=" + map.size()
+                + " threshold=" + map.threshold);
+
+        int miss = 0;
+        for (int i = 0; i < 30; i++) {
+            if (map.get(Integer.valueOf(1000 + i)) == null) miss++;
+        }
+        System.out.println("  丢失 key（每次用新对象查）: " + miss);
+
+        // 不变式断言：一次同时抓住两种阈值漏改
+        //   只改 table 不改 threshold -> 每插一个就翻倍，cap 会远大于 64
+        //   只改 threshold 不改 table -> cap 停在 16，桶永远不够用
+        boolean ok = map.table.length == 64
+                && map.threshold == 48
+                && map.size() == 30
+                && miss == 0;
+        System.out.println("  不变式 [cap=64 && threshold=48 && size=30 && 丢失=0] -> "
+                + (ok ? "PASS" : "FAIL（先查 resizeBrute 末尾有没有同步 threshold）"));
     }
 }
