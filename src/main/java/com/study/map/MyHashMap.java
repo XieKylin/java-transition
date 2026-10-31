@@ -1,6 +1,5 @@
 package com.study.map;
 
-
 import java.io.Serializable;
 import java.util.*;
 
@@ -19,8 +18,44 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return null;
+        return new AbstractSet<Entry<K, V>>() {
+            @Override
+            public Iterator<Entry<K, V>> iterator() {
+                return new Iterator<Entry<K, V>>() {
+                    private final Node<K, V>[] t = MyHashMap.this.table;
+                    private int nextIndex = 0;        // 下一个待检查的桶
+                    private Node<K, V> nextNode = null;   // 下一个待返回的节点
+
+                    @Override
+                    public boolean hasNext() {
+                        while (nextNode == null && nextIndex < t.length) {
+                            nextNode = t[nextIndex++];
+                        }
+                        return nextNode != null;
+                    }
+
+                    @Override
+                    public Entry<K, V> next() {
+                        if (!hasNext()) {
+                            throw new NoSuchElementException();
+                        }
+                        Node<K, V> e = nextNode;
+                        nextNode = e.next;
+                        if (nextNode == null) {
+                            hasNext();
+                        }
+                        return e;
+                    }
+                };
+            }
+
+            @Override
+            public int size() {
+                return MyHashMap.this.size;
+            }
+        };
     }
+
 
     @Override
     public int size() {
@@ -142,12 +177,8 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
         int oldCap = oldTable.length;
         int newCap = oldCap << 1;
 
-        // TODO 1：建新数组（照构造器第 16 行的写法，只换长度）
         Node<K, V>[] newTable = new Node[newCap];
 
-        // TODO 2：外层遍历 oldTable 的 i = 0..oldCap-1，
-        //        内层沿桶内链表走，按 indexFor(e.hash, newCap) 挂到 newTable 上。
-        //        循环体第一行必须先保存 e.next。
         for (Node<K, V> kvNode : oldTable) {
             Node<K, V> e = kvNode;
             while (e != null) {
@@ -169,7 +200,6 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
             }
         }
 
-        // TODO 3：换表 + 同步阈值
         table = newTable;
         threshold = newCap * 3 / 4;
     }
