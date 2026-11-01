@@ -56,7 +56,7 @@ src/test/java/com/study/
 
 ## 系列文章
 
-- [为什么 ArrayList 是 1.5 倍扩容？我压测了 500 万次](待发布)
+- [为什么 ArrayList 是 1.5 倍扩容？我压测了 500 万次](https://juejin.cn/post/7702467104353075215)
 - 一个 `e.next = null` 的缺失，如何让 `HashMap` 死循环（待写）
 
 ## 工作纪律
