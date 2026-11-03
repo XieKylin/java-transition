@@ -3,6 +3,7 @@ package com.study.map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ConcurrentModificationException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -251,7 +252,77 @@ class MyHashMapTest {
         assertThrows(NoSuchElementException.class, it::next);
     }
 
+    // ---------------- 7. fail-fast（modCount 三方账本） ----------------
+
+    @Test
+    @DisplayName("17. 遍历中 put 新 key -> CME，且抛点在 next() 不在 put()")
+    void cmeOnPutNewKey() {
+        MyHashMap<Integer, String> map = mapWithFive();
+
+        ConcurrentModificationException ex = assertThrows(ConcurrentModificationException.class, () -> {
+            for (Map.Entry<Integer, String> e : map.entrySet()) {
+                map.put(9999, "新 key");   // 这一行本身必须不抛
+            }
+        }, "遍历中新增条目必须抛 CME");
+        // 栈顶是迭代器的对账方法：证明责任主体是 next()，不是 put()
+        assertEquals("checkForComodification", ex.getStackTrace()[0].getMethodName(),
+                "抛点必须在对账方法上，若栈顶是 put 说明记账位置写错了");
+        assertEquals("next", ex.getStackTrace()[1].getMethodName(), "对账由 next() 触发");
+    }
+
+    @Test
+    @DisplayName("18. 遍历中 put 已有 key 换值 -> 不抛（覆盖写不改条目集合）")
+    void noCmeOnOverwrite() {
+        MyHashMap<Integer, String> map = mapWithFive();
+
+        int count = 0;
+        for (Map.Entry<Integer, String> e : map.entrySet()) {
+            map.put(1000, "改过的值");     // 覆盖写：不记账，不该抛
+            count++;
+        }
+        assertEquals(5, count, "覆盖写不该打断遍历");
+        assertEquals("改过的值", map.get(1000));
+        assertEquals(5, map.size(), "覆盖写不改 size");
+    }
+
+    @Test
+    @DisplayName("19. 遍历中 remove -> CME（摘节点要 --size 且 ++modCount）")
+    void cmeOnRemove() {
+        MyHashMap<Integer, String> map = mapWithFive();
+
+        assertThrows(ConcurrentModificationException.class, () -> {
+            for (Map.Entry<Integer, String> e : map.entrySet()) {
+                map.remove(1000);
+            }
+        }, "遍历中删条目必须抛 CME");
+    }
+
+    @Test
+    @DisplayName("20. 先对账再判空：耗尽后再改结构，next() 抛 CME 而不是 NoSuchElementException")
+    void checkBeforeExhaustedCheck() {
+        MyHashMap<Integer, String> map = mapWithFive();
+        var it = map.entrySet().iterator();
+        while (it.hasNext()) {
+            it.next();
+        }
+        assertThrows(NoSuchElementException.class, it::next, "耗尽且没改结构 -> NoSuchElementException");
+
+        map.put(9999, "新 key");            // 耗尽之后才改结构
+        assertThrows(ConcurrentModificationException.class, it::next,
+                "两个条件同时成立时必须先报 CME，否则改结构这件事被 NoSuchElementException 掩盖");
+    }
+
     // ---------------- 工具 ----------------
+
+    private static MyHashMap<Integer, String> mapWithFive() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        for (int i = 0; i < 5; i++) {
+            map.put(1000 + i, "v" + i);
+        }
+        assertEquals(5, map.size());
+        assertEquals(16, map.table.length, "5 个元素不该触发扩容");
+        return map;
+    }
 
     private static MyHashMap<Integer, String> mapWithChain4() {
         MyHashMap<Integer, String> map = new MyHashMap<>();

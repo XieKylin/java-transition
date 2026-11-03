@@ -9,6 +9,13 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
 
     transient int size;
 
+    /**
+     * 结构性修改计数器。
+     * 记账判据：条目集合或迭代顺序变了才 +1。
+     * 扩容（resizeBrute）不记账 —— 条目数没变；覆盖写不记账 —— 条目集合没变。
+     */
+    transient int modCount;
+
     int threshold;
 
     public MyHashMap() {
@@ -25,6 +32,15 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
                     private final Node<K, V>[] t = MyHashMap.this.table;
                     private int nextIndex = 0;        // 下一个待检查的桶
                     private Node<K, V> nextNode = null;   // 下一个待返回的节点
+                    /** 迭代器创建那一刻的快照。注意是赋值，不是自增 */
+                    private int expectedModCount = MyHashMap.this.modCount;
+
+                    /** 对账：外部把条目集合/顺序改了，这里就会不等 */
+                    final void checkForComodification() {
+                        if (MyHashMap.this.modCount != expectedModCount) {
+                            throw new ConcurrentModificationException();
+                        }
+                    }
 
                     @Override
                     public boolean hasNext() {
@@ -36,6 +52,8 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
 
                     @Override
                     public Entry<K, V> next() {
+                        // 先对账再判空：顺序反了，CME 会被 NoSuchElementException 掩盖
+                        checkForComodification();
                         if (!hasNext()) {
                             throw new NoSuchElementException();
                         }
@@ -140,6 +158,7 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
         if (first == null) {
             e = new Node<>(h, key, value, null);
             table[index] = e;
+            ++modCount;
             if (++size > threshold) {
                 resizeBrute();
             }
@@ -156,6 +175,7 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
             if (first.next == null) {
                 e = new Node<>(h, key, value, null);
                 first.next = e;
+                ++modCount;
                 if (++size > threshold) {
                     resizeBrute();
                 }
@@ -217,6 +237,7 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
                 } else {
                     prev.next = e.next;
                 }
+                ++modCount;
                 size--;
                 return e.getValue();
             }
