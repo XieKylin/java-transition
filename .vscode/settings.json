@@ -10,8 +10,10 @@
   "java.configuration.updateBuildConfiguration": "automatic",
   "maven.executable.path": "D:\\developkit\\apache-maven-3.9.9\\bin\\mvn.cmd",
 
-  // 探针里有 System.out 打中文，VM 参数统一带上编码与反射开包，免得每次手敲
-  "java.debug.settings.vmArgs": "-Dstdout.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED",
+  // 不要加 -Dstdout.encoding=UTF-8：
+  // Java 18+ 的 stdout 默认跟随控制台码表（本机 GBK/936），强行改 UTF-8 而终端仍按 GBK 解 = 乱码。
+  // 只在重定向到文件、且确定按 UTF-8 读时才临时加。反射读 String.value 需要开包，这个要留着。
+  "java.debug.settings.vmArgs": "--add-opens java.base/java.lang=ALL-UNNAMED",
 
   "files.encoding": "utf8",
   "editor.tabSize": 4,
