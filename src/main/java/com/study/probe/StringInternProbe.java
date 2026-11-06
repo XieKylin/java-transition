@@ -82,6 +82,14 @@ public class StringInternProbe {
         check("它的 intern() == \"hello\"", s2.intern() == lit, true);
         check("两次 intern 拿到同一个对象", s1.intern() == s2.intern(), true);
 
+        // 版本判据：池里从没出现过的字符串，intern() 返回谁？
+        // "wor" 是字面量、参与拼接的是变量 q，故整体不可折叠，结果串全程序唯一。
+        String q = "wor";
+        String never = q + "ld2026-never-in-pool";
+        String neverInterned = never.intern();
+        check("JDK 7+ 版本判据：intern() 返回对象自己（池在堆里，直接登记引用）",
+                neverInterned == never, true);
+
         System.out.println();
     }
 
