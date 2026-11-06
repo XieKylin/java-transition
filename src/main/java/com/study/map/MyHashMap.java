@@ -137,17 +137,39 @@ public class MyHashMap<K, V> extends AbstractMap<K, V>
         return (n - 1) & h;
     }
 
-    public V get(Object key) {
+    /**
+     * 按 key 找节点：定位一个桶，然后只在这条链上走。
+     *
+     * get / containsKey 共用这一处 —— 免得两处的命中判定各写一遍、哪天只改了一边
+     * （Day-05 的教训：同一个判定写两遍，修一个漏一个）。
+     * 返回 null 表示不存在；注意 value 本身可能为 null，所以调用方不能拿 get()==null 当判据。
+     */
+    private Node<K, V> findNode(Object key) {
         int h = hash(key);
-        int i = indexFor(h, table.length);
-        Node<K, V> e = table[i];
+        Node<K, V> e = table[indexFor(h, table.length)];
         while (e != null) {
             if (h == e.hash && (key == e.getKey() || (key != null && key.equals(e.getKey())))) {
-                return e.getValue();
+                return e;
             }
             e = e.next;
         }
         return null;
+    }
+
+    @Override
+    public V get(Object key) {
+        Node<K, V> e = findNode(key);
+        return (e == null) ? null : e.getValue();
+    }
+
+    /**
+     * 覆写理由：`AbstractMap` 的默认实现是遍历整个 `entrySet()` 比对 key，O(n)。
+     * 这里对齐 get，只走一个桶，均摊 O(1)。
+     * 2026-11-07 加练位清账（原记为 W5 负债）。
+     */
+    @Override
+    public boolean containsKey(Object key) {
+        return findNode(key) != null;
     }
 
     public V put(K key, V value) {

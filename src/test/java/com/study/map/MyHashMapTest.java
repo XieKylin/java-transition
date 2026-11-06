@@ -312,6 +312,72 @@ class MyHashMapTest {
                 "两个条件同时成立时必须先报 CME，否则改结构这件事被 NoSuchElementException 掩盖");
     }
 
+    // ---------------- 8. containsKey（2026-11-07 覆写，清 AbstractMap 的 O(n)） ----------------
+
+    @Test
+    @DisplayName("21. containsKey 与 get 结论一致：桶头命中 / 链中命中 / 不存在")
+    void containsKeyAgreesWithGet() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        for (int k : SAME_BUCKET) {
+            map.put(k, "v" + k);
+        }
+
+        // 规则 1：用新对象查，别复用 put 时的引用（否则测的是引用比较）
+        for (int k : SAME_BUCKET) {
+            Integer fresh = Integer.valueOf(k);      // >127，每次都是新对象
+            assertTrue(map.containsKey(fresh), "链上已有的 key 必须命中：" + k);
+            assertNotNull(map.get(fresh));
+        }
+
+        Integer absent = Integer.valueOf(9999);       // 落同一个桶族，但没放进去
+        assertFalse(map.containsKey(absent), "没放进去的 key 不能命中");
+        assertNull(map.get(absent), "containsKey 与 get 必须同源同结论");
+    }
+
+    @Test
+    @DisplayName("22. 空表 containsKey 不越界（桶为空的分支）")
+    void containsKeyOnEmptyMap() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        assertFalse(map.containsKey(Integer.valueOf(1000)));
+        assertFalse(map.containsKey(null));
+    }
+
+    @Test
+    @DisplayName("23. null key：放着能查到，没放查不到")
+    void containsKeyNullKey() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        assertFalse(map.containsKey(null), "空表里没有 null key");
+
+        map.put(null, "nullVal");
+        assertTrue(map.containsKey(null), "put 过 null key 就该命中");
+        assertEquals("nullVal", map.get(null));
+
+        map.remove(null);
+        assertFalse(map.containsKey(null), "remove 之后不能再命中");
+    }
+
+    @Test
+    @DisplayName("24. 与 JDK HashMap 逐 key 对照 containsKey 结论（key 必须 > 127）")
+    void containsKeyEquivalentToJdk() {
+        MyHashMap<Integer, String> mine = new MyHashMap<>();
+        Map<Integer, String> jdk = new java.util.HashMap<>();
+        // 先真的把 100 个 key 放进去。第一版这里只 put 了 CHAIN4，却拿 1000+16i 去查 ——
+        // 两边都返回 false，用例空转，故意改坏也不红。
+        for (int i = 0; i < 100; i++) {
+            int k = 1000 + 16 * i;             // 同桶族、> 127、值各不相同
+            mine.put(k, "v" + k);
+            jdk.put(k, "v" + k);
+        }
+        // 对照查询：命中与不命中都要覆盖
+        for (int i = 0; i < 100; i++) {
+            int k = 1000 + 16 * i;
+            assertEquals(jdk.containsKey(k), mine.containsKey(k), "命中 key=" + k + " 结论不一致");
+        }
+        for (int k : new int[]{9999, 12345, 65535, 8}) {
+            assertEquals(jdk.containsKey(k), mine.containsKey(k), "不命中 key=" + k + " 结论不一致");
+        }
+    }
+
     // ---------------- 工具 ----------------
 
     private static MyHashMap<Integer, String> mapWithFive() {

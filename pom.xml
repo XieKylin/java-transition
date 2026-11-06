@@ -10,8 +10,9 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <!-- 2026-11-07：target/source 改为 release 21，为 M2 虚拟线程（JDK 21+）铺路。
+             注意 IDEA 2023.1 语言级别上限 20，IDE 内可能报「不支持发行版本 21」，命令行能过即可。 -->
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
     </properties>
