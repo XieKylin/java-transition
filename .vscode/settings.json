@@ -1,0 +1,19 @@
+{
+  // 2026-11-07：从 IDEA 2023.1（语言级别上限 20）切到 VS Code。
+  // 本工程 pom 用 maven.compiler.release=21，VS Code 的 Java 扩展会按 pom 走 21，不再报「不支持发行版本 21」。
+  "java.configuration.runtimes": [
+    { "name": "JavaSE-21", "path": "D:\\developkit\\jdk21", "default": true },
+    { "name": "JavaSE-17", "path": "D:\\developkit\\jdk17" },
+    { "name": "JavaSE-22", "path": "D:\\developkit\\jdk22" }
+  ],
+  "java.jdt.ls.java.home": "D:\\developkit\\jdk21",
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "maven.executable.path": "D:\\developkit\\apache-maven-3.9.9\\bin\\mvn.cmd",
+
+  // 探针里有 System.out 打中文，VM 参数统一带上编码与反射开包，免得每次手敲
+  "java.debug.settings.vmArgs": "-Dstdout.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED",
+
+  "files.encoding": "utf8",
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true
+}
