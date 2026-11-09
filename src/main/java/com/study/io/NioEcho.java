@@ -18,7 +18,8 @@ public class NioEcho {
         server.register(selector, SelectionKey.OP_ACCEPT);               // ② 登记：我关心"有新连接"
 
         while (true) {
-            selector.select();                                           // ③ 整个程序唯一会停的地方
+            int ready = selector.select();
+            System.out.println("本次 select 返回 " + ready + " 个就绪 channel");                                          // ③ 整个程序唯一会停的地方
 
             Iterator<SelectionKey> it = selector.selectedKeys().iterator();
             while (it.hasNext()) {
@@ -33,6 +34,7 @@ public class NioEcho {
                     SocketChannel ch = (SocketChannel) key.channel();
                     ByteBuffer buf = ByteBuffer.allocate(1024);
                     int n = ch.read(buf);                                // ⑤ 这一行永远不会停
+                    System.out.println("read 返回 " + n);
                     if (n == -1) { ch.close(); continue; }
                     buf.flip();
                     ch.write(buf);
