@@ -1,0 +1,36 @@
+playground\PecsFail.java:19: error: incompatible types: Object cannot be converted to CAP#1
+        dst.add(src.get(0));   // 两个独立的 capture，互不相干
+                       ^
+  where CAP#1 is a fresh type-variable:
+    CAP#1 extends Number from capture of ? extends Number
+playground\PecsFail.java:24: error: incompatible types: Number cannot be converted to CAP#1
+        a.add(a.get(0));
+                   ^
+  where CAP#1 is a fresh type-variable:
+    CAP#1 extends Number from capture of ? extends Number
+playground\PecsFail.java:29: error: incompatible types: int cannot be converted to CAP#1
+        src.add(1);
+                ^
+  where CAP#1 is a fresh type-variable:
+    CAP#1 extends Number from capture of ? extends Number
+playground\PecsFail.java:34: error: incompatible types: Number cannot be converted to CAP#1
+        a.add(b.get(0));
+                   ^
+  where CAP#1 is a fresh type-variable:
+    CAP#1 extends Number from capture of ? extends Number
+playground\PecsFail.java:45: error: method same in class PecsFail cannot be applied to given types;
+        same(a, b);
+        ^
+  required: List<T>,List<T>
+  found:    List<CAP#1>,List<CAP#2>
+  reason: inference variable T has incompatible equality constraints CAP#2,CAP#1
+  where T is a type-variable:
+    T extends Object declared in method <T>same(List<T>,List<T>)
+  where CAP#1,CAP#2 are fresh type-variables:
+    CAP#1 extends Number from capture of ? extends Number
+    CAP#2 extends Number from capture of ? extends Number
+playground\PecsFail.java:50: error: incompatible types: ArrayList<String> cannot be converted to List<Object>
+        List<Object> list = new ArrayList<String>();
+                            ^
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+6 errors

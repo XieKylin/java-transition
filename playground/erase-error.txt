@@ -1,0 +1,18 @@
+playground\EraseFail.java:28: error: non-static type variable T cannot be referenced from a static context
+    static T staticFoo() {
+           ^
+playground\EraseFail.java:36: error: name clash: f(List<Integer>) and f(List<String>) have the same erasure
+    static void f(List<Integer> x) {
+                ^
+playground\EraseFail.java:15: error: generic array creation
+    T[] arr = new T[10];
+              ^
+playground\EraseFail.java:19: error: Object cannot be safely cast to U
+        return o instanceof U;
+               ^
+  where U is a type-variable:
+    U extends Object declared in method <U>isU(Object)
+playground\EraseFail.java:24: error: Object cannot be safely cast to List<String>
+        return o instanceof List<String>;
+               ^
+5 errors

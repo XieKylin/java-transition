@@ -14,6 +14,9 @@ target/
 # 编译产物
 *.class
 
+# playground 的 javac 输出（源码和报错原文要提交，out 目录不提交）
+playground/out/
+
 # 日志与系统文件
 *.log
 .DS_Store
